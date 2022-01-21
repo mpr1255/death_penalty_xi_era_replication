@@ -1,0 +1,215 @@
+---
+title: "Some basic analysis for our death penalty project"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+```{r}
+library(data.table)
+library(tidyverse)
+library(lubridate)
+`%notlike%` <- Negate(`%like%`)
+
+`%notin%`<- Negate(`%in%`)
+```
+
+# Imports, some basic looking at things, and a simple chart
+
+```{r}
+# grabbing data from the db. 
+join_files <- list.files("/mnt/c/Users/m/projects/cnki_database/tbls/run_5", pattern = "tbl_join", full.names = TRUE)
+
+main_db <- fread("/mnt/c/Users/m/projects/cnki_database/tbls/merged/tbl_final_to_run_8.csv")
+
+setnames(main_db, "document_id", "doc_id")
+
+
+readdata <- function(x){
+    dt_csv <- fread(x, encoding = "UTF-8", header = TRUE)[,-c("V1")]
+    keycols <- c("document_id")
+    setkeyv(dt_csv, keycols)
+    return(dt_csv)
+}
+
+mylist <- lapply(join_files, readdata)
+dt_join <- rbindlist(mylist, use.names = TRUE, fill = TRUE)
+
+setnames(dt_join, "document_id", "doc_id")
+
+dt <- main_db[dt_join, on = "doc_id"]
+```
+
+# What were the search terms in the db?
+
+This shows them plus the field. Forget the NA value. 
+```{r}
+dt[,unique(search_term)]
+
+# all the column names
+names(dt)
+```
+
+# A simple plot of the pubs
+
+```{r}
+dt[journal_year > 1980] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+# read in that data. 
+df_sifa_pubdates <- fread("/mnt/c/Users/m/projects/cnki_database/data/run_10/raw_html_pages/sifa_pubdates.txt")
+# note the above was created from the htmls with the command rg -o [0-9]{4}-[0-9]{2}-[0-9]{2} 0*.html | rg -o [0-9]{4}-[0-9]{2}-[0-9]{2} and that was output to that text file. 
+
+```
+
+# An attempted normalisation of this data per pubs that /mention/ criminal justice
+
+Think the idea here is that the broader universe of all pubs mentioning 刑事司法 anywhere in them are going to be a kind of control on whether there's anything funny going on in these data.
+
+Note that these are two different datasets -- though with some overlap. The first is the entire dataset with all the terms about death penalty/criminal justice. Below are ALL articles that even /mentioned/ it anywhere in it. The n is `r nrow(df_sifa_pubdates)`. The n of the first is `r nrow(dt)`.
+
+```{r}
+
+setnames(df_sifa_pubdates, "V1", "pubdate")
+
+df_sifa_pubdates[,pubdate := ymd(pubdate)]
+
+df_sifa_pubdates[pubdate > 1980-01-01] %>% 
+  ggplot(aes(pubdate)) +
+  geom_histogram(binwidth = 70)
+
+```
+
+# about scaling/standardizing/normalising the data
+
+The initial issue we had with this data was: what if ALL of the cnki data goes up and down almost exactly like that, due to some exogenous factor (like the leadership said: we need x more pubs every year for the next 10 years, then we need y less more every year after that), and the entire academic output of China followed that trajectory, then our variation in DP stuff would be meaningless. So we want to compare it to something to see if the variation is meaningful.
+
+I think we can just show the two graphs side by side -- the dp one and the one with crim justice ANYWHERE in it -- and it will be clear that the DP one has gone down. One way of quantifying this change is by a correlation analysis -- a bivariate regression, I'm told -- where you get a number that measures how closely two distributions correspond... but it hardly seems necessary and would be weird/funny for us to do that. Since anyone can use their eyes to look and see that one goes up and down and the other goes up and doesn't go down.
+
+
+
+# Some analysis of funding
+
+This just pulls out all the cases where there is a report of funding, and plots on the year.
+
+```{r}
+dt[,.(funding)][,uniqueN(funding)]
+
+dt[funding != ""] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+```
+
+Now trying the same for death penalty only. First just the publication distribution.... for all time and then just post 1980 then post 2000
+
+```{r}
+dt[search_term %like% "sixing"] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+dt[search_term %like% "sixing"][journal_year > 1980] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+dt[search_term %like% "sixing"][journal_year > 2000] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+```
+Now the funding count per year.
+
+```{r}
+dt[search_term %like% "sixing"][funding != ""] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+```
+
+# Who is doing the funding? 
+
+If you just unique ALL of the different funding agencies, the list is massive. We can't figure out who is funding what like that. I'll try get some topn counts.
+
+```{r}
+dt[,unique(funding)] %>% head(50)
+
+#meaning there are only 
+dt[,uniqueN(funding)]
+
+# this is not very informative. 
+dt[,.(funding_count = .N), by = funding]
+```
+
+looking at a few, some ideas for funding source TYPES might be...
+
+```{r}
+funding_sources <- c("教育部","国家社会科学基金","省|市","中国法学会", "大学|学院|研究所|研究院") 
+
+dt_w_funding <- dt[,.(funding = unique(funding)), by = .(doc_id, journal_year, search_term)][funding %like% "教育部",funding_source := "MOE"]
+dt_w_funding[funding %like% "国家社会科|国家社科",funding_source := "CASS"]
+dt_w_funding[funding %like% "省|市",funding_source := "province_or_city"]
+dt_w_funding[funding %like% "大学|学院|研究所|研究院",funding_source := "university"]
+dt_w_funding[funding %like% "中国法学会",funding_source := "China_law_society"]
+dt_w_funding[funding %like% "国家",funding_source := "central_govt"]
+
+dt_w_funding[,unique(funding_source)]
+
+dt_w_funding[,.(funding_count = .N), by = .(funding, funding_source, journal_year)]
+
+dt_w_funding[,.(funding_count = .N), by = .(funding_source)]
+
+
+
+
+```
+These are for death penalty funding specifically. 
+
+```{r}
+dt_w_funding[search_term %like% "sixing"][funding != ""] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+dt_w_funding[search_term %like% "sixing"][,.(funding_count = .N), by = .(funding_source, journal_year)
+   ][funding_source != ""][funding_source != "NA"] %>%
+  ggplot(aes(journal_year, funding_count, colour = funding_source)) +
+  geom_line()
+
+# but the vast majority don't state funding!!
+dt_w_funding[search_term %like% "sixing"][,.(funding_count = .N), by = .(funding_source, journal_year)
+   ] %>%
+  ggplot(aes(journal_year, funding_count, colour = funding_source)) +
+  geom_line()
+  
+
+```
+not seeing any real pattern in terms of where funding is coming from! And they dip in 2015 so maybe there's some other funder?? Let's quickly check and move right on. 
+
+UPDATE: OK, I didn't yet put in central govt stuff and I didn't have as expansive a definition of CASS. So those were more. 
+
+The actual number of papers that declared funding to begin with were not all that great -- just `r dt[funding != "",uniqueN(doc_id)]` papers of the total `r dt[,uniqueN(doc_id)]` papers in the dataset.  
+
+(and again, this is the dataset with these searches:)
+
+
+Not sure if there is more juice to squeeze on the funding. Basically the vast majority don't even state the funding, so any variation there is going to be just eclipsed by all the ones that don't state. Definitely spent too long on that avenue!!
+
+# Analysis of criminal justice slogans in full text death penalty academic publications
+
+```{r}
+
+
+
+```
+
+
+
+
+
+

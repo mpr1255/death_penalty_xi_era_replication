@@ -1,0 +1,21 @@
+Our methodology for comparing Xi Jinping's remarks on the death penalty to those other other leaders was as follows. First, we obtained all of the written collected works for Mao Zedong, Deng Xiaoping, Jiang Zemin, Hu Jintao, and Xi. For Mao and Xi these were the "Mao Zedong manuscripts since the founding of the People's Republic of China" (建国以来毛泽东文稿) and "The Governance of China" (习近平谈治国理政) respectively. The other leaders' works are simply the multi-volume "collected works" (文选). We then digitised these records using commercial and open source optical character recognition software. In the case of Xi, we also consulted a comprehensive online database of over 11,000 important speeches.[3] Such a resource does not appear to be available for previous PRC leaders.
+
+We searched these materials for "death penalty" (死刑) and "death penalty with reprieve" (死缓), along with a variety of alternate expressions (处死, 枪毙, 处决). In general, leaders after Deng have not personally addressed the death penalty at all in their canonical published works. The phrases appear nowhere in the works of Hu and Xi, and only in footnotes in the Jiang volumes. In contrast, in a speech about moral norms and Party Spirit (抓精神文明建设，抓党风、社会风气), Deng Xiaoping says that "the death penalty cannot be abolished; some crimes must simply be punished with death." (p. 152) [2] Finally, Mao's works show him unsurprisingly as a death penalty maximalist, with dozens of positive references to both judicial and extrajudicial killing.
+
+Xi also says nothing specifically about the death penalty in the database of over 11,000 speeches. There are, however, three appearnces of the term in news reports about Xi's activities. Two are perfunctory mentions in amnesty orders under Xi's aegis,[4, 5] and one news report in which Xi visits a Nanjing Massacre memorial exhibition and exclaims "how terrifying!" upon seeing photographs of two Japanese war criminals being executed. [6]
+
+The only instance we were able to find of Xi Jinping referring directly to the death penalty in any published writing or speech occurs in the 2017 volume "The Law-Based Governance of China." There, he makes one reference to the injustice of erroneous capital sentences (p 91) and criticises judicial corruption, because guilty parties can make bribes to get death sentences quashed (p 80).[1]
+
+--------------------
+
+[1] Xi, Jinping. 2017. The Law-Based Governance of China. 1st ed. Central Compilation & Translation Press.
+
+[2] Speech at the Standing Committee of the Political Bureau of the Central Committee (January 17, 1986) [在中央政治局 常委会上的讲话 (一九八六年一月十七日)] in Deng, Xiaoping. 1993. Deng Xiaoping Collected Works: Volume 3. People's Press.
+
+[3] Xi Jinping's Important Speech Database [习近平 系列重要讲话数据库]. 2022. People's Press. Available at jhsjk.people.cn
+
+[4] Amnesty Decree of the President of the People's Republic of China. People's Daily. 2019-06-30. http://jhsjk.people.cn/article/31203707
+
+[5] President Xi Jinping signed and issues amnesty decree: On the occasion of the 70th anniversary of the founding of the People's Republic of China, nine categories of prisoners will receive amnesty. People's Daily. 2019-06-30. http://jhsjk.people.cn/article/31203805
+
+[6] What did General Secretary Xi say when he visited the Memorial Hall for the Victims of the Nanjing Massacre by Japanese Invaders? Xinhua Online. 2014-12-16. http://jhsjk.people.cn/article/26218490

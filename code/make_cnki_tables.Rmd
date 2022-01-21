@@ -1,0 +1,55 @@
+---
+title: "CNKI tables"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(flextable)
+library(data.table)
+library(officer)
+library(tidyverse)
+library(glue)
+library(here)
+library(knitr)
+library(kableExtra)
+here <- rprojroot::find_rstudio_root_file()
+
+data <- as.data.table(readxl::read_xlsx(glue("{here}/data/cnki/sixing_sihuan_cites_downloads_pianming_guanjianci_zhaiyao.xlsx")))
+
+tbl_a <- data[category == "Most downloaded Xi era", .(title_en, author_en, journal_en, pubdate, cites, downloads)][1:10]
+tbl_b <- data[category == "Most cited Xi era", .(title_en, author_en, journal_en, pubdate, cites, downloads)][1:10]
+tbl_c <- data[category == "Most downloaded Hu era", .(title_en, author_en, journal_en, pubdate, cites, downloads)][1:10]
+tbl_d <- data[category == "Most cited Hu era", .(title_en, author_en, journal_en, pubdate, cites, downloads)][1:10]
+
+```
+
+
+**Most downloaded Xi era**
+
+```{r echo = FALSE, results="asis"}
+knitr::kable(tbl_a, format="html") |>  kable_material(c("striped"))
+```
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+**Most cited Xi era**
+
+```{r echo = FALSE, results="asis"}
+knitr::kable(tbl_b, format="html") |>  kable_material(c("striped"))
+```
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+
+**Most downloaded Hu era**
+
+```{r echo = FALSE, results="asis"}
+knitr::kable(tbl_c, format="html") |>  kable_material(c("striped"))
+```
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+**Most cited Hu era**
+
+```{r echo = FALSE, results="asis"}
+knitr::kable(tbl_d, format="html") |>  kable_material(c("striped"))
+```
+

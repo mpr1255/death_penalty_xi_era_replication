@@ -1,0 +1,164 @@
+---
+title: "Clean names from CNKI"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+
+library(data.table)
+library(tidyverse)
+library(utf8)
+library(fs)
+library(glue)
+library(tesseract)
+
+dt_all = fread("/mnt/c/Users/m/projects/cnki_database/tbls/merged/tbl_final_to_run_7.csv", header = TRUE)
+dt_searchterms = fread("/mnt/c/Users/m/projects/cnki_database/tbls/merged/tbl_final_to_run_7_search_term.csv", header = TRUE)
+
+dt_run5 <- dt_searchterms[run == "run_5"]
+dt_run5_pdf <- dt_all[dt_run5, on = "document_id"]
+
+txt_for_ocr <- list.files("./data/txt/", full.names = TRUE) %>% as_tibble()
+
+txt_for_ocr <- txt_for_ocr %>% 
+  mutate(file_size = as.integer(file.size(txt_for_ocr$value))) %>% 
+  filter(file_size < 2000) %>% 
+  mutate(doc_id = str_extract(value, "(C.*?--)")) %>% 
+  mutate(doc_id = str_remove(doc_id, "--"))
+
+pdf_list <- list.files("./data/pdf/", full.names = TRUE) %>% as_tibble() %>% 
+  mutate(doc_id = str_extract(value, "(C.*?--)")) %>% 
+  mutate(doc_id = str_remove(doc_id, "--"))
+  
+pdfs_to_ocr <- pdf_list %>% filter(doc_id %in% txt_for_ocr$doc_id)
+
+custom_settings <- tesseract(language = "chi_sim", options = list(tessedit_pageseg_mode = 1))
+
+ocr_save_text <- function(file){
+  file_name <- str_remove(str_extract(file, "C.*?\\.pdf"), ".pdf")
+  if (file.exists(glue("./data/ocr_txt/{file_name}.txt"))){
+    print("file exists; not converted")
+  }else{
+  fulltext <- ocr(file, engine = custom_settings)
+  writeLines(fulltext, glue("./data/ocr_txt/{file_name}.txt"), useBytes = TRUE)
+  }
+}
+
+map(pdfs_to_ocr$value, ~ocr_save_text(.x))
+
+#################
+
+
+
+
+
+
+file_name <- pdfs_to_ocr$value[1]
+
+fname2 <- str_remove(str_extract(file_name, "C.*?\\.pdf"), ".pdf")
+
+file.exists(glue("./data/ocr_txt/{fname2}.txt"))
+
+
+text <- ocr(file, engine = custom_settings)
+
+
+dt_all_files[,document_id := str_extract(V1, "(\\/.*?--)")][,document_id := str_remove(document_id, "\\/")][,document_id := str_remove(document_id, "\\--")]
+
+
+dt_run5_pdfs_paths <- dt_all_files[document_id %in% dt_run5_pdf[,document_id]]
+
+oldnamesvect <- dt_run5_pdfs_paths[,V1]
+
+oldnamesvect1 <- oldnamesvect[1]
+
+newnamesvect1 <- str_remove(oldnamesvect1, "^.*\\/")
+
+oldpath <- ("/mnt/c/Users/m/projects/cnki_database/data/merged/pdfs/")
+newpath <- ("/mnt/c/Users/m/projects/death_penalty_xi_era/data/pdfs/")
+
+
+file.copy(paste0(oldpath, oldnamesvect1), paste0(newpath, newnamesvect1))
+
+
+
+
+
+
+##########################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dt[order(-downloads)]
+
+options(datatable.prettyprint.char=300L)
+
+# Filter for death penalty in the title
+dt1 <- dt[title_ch %like% "死刑"] 
+# Make a Run-LEngth ID column vector (rleidv) starting at 1 for V1 and art; then base it at 0 by minusing one.
+dt1[, V1 := rleidv(dt1)][,V1 := V1-1][, art := rleidv(dt1)][,art := art-1]
+# Export
+fwrite(dt1, r"(C:\Users\m\projects\cnki_database\data\run_5\tbls\tbl_articles_run_5_reduced_1.csv)")
+
+dt[,pdf_url := str_remove(pdf_url, "http://")]
+
+dt[,pdf_url := str_replace(pdf_url, ".rp.nla.gov.au/kcms", "/kns55")]
+
+dt[pdf_url %like% ".rp.nla.gov.au/kcms", .(pdf_url)]
+
+options(datatable.prettyprint.char=5L)
+
+# dt[pdf_url %like% "rp.nla.gov"]
+# dt[art == "40119", pdf_url]
+# dt[art == "4", pdf_url]
+
+dt[title_ch %like% "以人为本视阈下的死刑犯罪预防"]
+
+dt[document_id == "CJFDLAST2019_SXZF201903022"]
+
+dt[document_id == "CJFD2008_SFAS200802011"]
+dt[art == "17", pdf_url]
+
+Sys.setlocale("LC_CTYPE", locale = "chs")
+
+dt[,-c("fuzzy_index", "b_new", "V1")]
+
+dt[,  grep("pdf", names(dt)) := NULL]
+
+dt[,uniqueN(funding)]
+
+dt[,order(.SD), .SDcols = "downloads"]
+
+dt[document_id == "CJFDLAST2019_YTXS201905004", pdf_url]
+
+dt[title_ch %like% "柏拉图古典死刑论及其当代启示", pdf_url]
+
+dt[pdf_url %like% "http"]
+
+dt[title_ch %like% "死刑" & journal_year > 1980] %>% 
+            ggplot(aes(journal_year)) +
+            geom_histogram(binwidth = 1)
+
+
+options(datatable.prettyprint.char=20L)
+
+```

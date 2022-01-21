@@ -1,0 +1,212 @@
+---
+title: "00_pull-data"
+author: "Matthew P Robertson"
+date: "3/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(tidyverse)
+library(lubridate)
+`%notin%` <- Negate(`%in%`)
+```
+# Pull data from the database.
+
+```{r pull_data_from_db}
+
+# dt_all = fread("/mnt/c/Users/m/projects/cnki_database/tbls/merged/tbl_final_to_run_7.csv", header = TRUE)
+# dt_searchterms = fread("/mnt/c/Users/m/projects/cnki_database/tbls/merged/tbl_final_to_run_7_search_term.csv", header = TRUE)
+# 
+# dt_run5 <- dt_searchterms[run == "run_5"]
+# 
+# 
+# dt_run5_pdf <- dt_all[dt_run5, on = "document_id"]
+# 
+# 
+# dt_all_files <- as.data.table(list.files("/mnt/c/Users/m/projects/cnki_database/data/merged/pdfs/", recursive = TRUE))
+# 
+# dt_all_files[,document_id := str_extract(V1, "(\\/.*?--)")][,document_id := str_remove(document_id, "\\/")][,document_id := str_remove(document_id, "\\--")]
+# 
+# 
+# dt_run5_pdfs_paths <- dt_all_files[document_id %in% dt_run5_pdf[,document_id]]
+# 
+# oldnamesvect <- dt_run5_pdfs_paths[,V1]
+# 
+# oldnamesvect1 <- oldnamesvect[1]
+# 
+# newnamesvect1 <- str_remove(oldnamesvect1, "^.*\\/")
+# 
+# oldpath <- ("/mnt/c/Users/m/projects/cnki_database/data/merged/pdfs/")
+# newpath <- ("/mnt/c/Users/m/projects/death_penalty_xi_era/data/pdfs/")
+# 
+# 
+# file.copy(paste0(oldpath, oldnamesvect1), paste0(newpath, newnamesvect1))
+
+```
+
+# Join to the related files containing author data, keywords, search terms etc.
+
+```{r}
+join_files <- list.files("/mnt/c/Users/m/projects/cnki_database/tbls/run_5", pattern = "tbl_join", full.names = TRUE)
+
+readdata <- function(x){
+    dt_csv <- fread(x, encoding = "UTF-8", header = TRUE)[,-c("V1")]
+    keycols <- c("document_id")
+    setkeyv(dt_csv, keycols)
+    return(dt_csv)
+}
+
+
+mylist <- lapply(join_files, readdata)
+dt_join <- rbindlist(mylist, use.names = TRUE, fill = TRUE)
+
+
+```
+
+## reduced 1 - export reducing data for pdfs
+
+```{r}
+# Filter for death penalty in the title
+dt1 <- dt[title_ch %like% "死刑"]
+
+# Make a Run-LEngth ID column vector (rleidv) starting at 1 for V1 and art; then base it at 0 by minusing one.
+dt1[, V1 := rleidv(dt1)][,V1 := V1-1][, art := rleidv(dt1)][,art := art-1]
+# Export
+# fwrite(dt1, r"(C:\Users\m\projects\cnki_database\data\run_5\tbls\tbl_articles_run_5_reduced_1.csv)")
+
+
+
+options(datatable.prettyprint.char=5L)
+
+# dt[pdf_url %like% "rp.nla.gov"]
+# dt[art == "40119", pdf_url]
+# dt[art == "4", pdf_url]
+
+dt[title_ch %like% "以人为本视阈下的死刑犯罪预防"]
+
+dt[document_id == "CJFDLAST2019_SXZF201903022"]
+
+dt[document_id == "CJFD2008_SFAS200802011"]
+dt[art == "17", pdf_url]
+
+Sys.setlocale("LC_CTYPE", locale = "chs")
+
+dt[,-c("fuzzy_index", "b_new", "V1")]
+
+dt[,  grep("pdf", names(dt)) := NULL]
+
+dt[,uniqueN(funding)]
+
+dt[,order(.SD), .SDcols = "downloads"]
+
+dt[document_id == "CJFDLAST2019_YTXS201905004", pdf_url]
+
+dt[title_ch %like% "柏拉图古典死刑论及其当代启示", pdf_url]
+
+dt[pdf_url %like% "http"]
+
+dt[title_ch %like% "死刑" & journal_year > 1980] %>% 
+            ggplot(aes(journal_year)) +
+            geom_histogram(binwidth = 1)
+
+
+#############################
+
+df_sifa_pubdates <- fread("/mnt/c/Users/m/projects/cnki_database/data/run_10/raw_html_pages/sifa_pubdates.txt")
+
+setnames(df_sifa_pubdates, "V1", "pubdate")
+
+
+df_sifa_pubdates[,pubdate := ymd(pubdate)]
+
+df_sifa_pubdates[,pubdate]
+
+df_sifa_pubdates[pubdate > 1980-01-01] %>% 
+  ggplot(aes(pubdate)) +
+  geom_histogram(binwidth = 70)
+
+df_sifa_pubdates %>% 
+            ggplot(aes(V1)) +
+            geom_histogram(binwidth = 1)
+
+
+#########################################33
+
+df_sixing_pubdates <- fread("/mnt/c/Users/m/projects/cnki_database/data/run_10/raw_html_pages/sixing_pubdates.txt")
+
+setnames(df_sixing_pubdates, "V1", "pubdate")
+
+
+df_sixing_pubdates[,pubdate := ymd(pubdate)]
+
+# df_sixing_pubdates[,pubdate]
+
+df_sixing_pubdates[pubdate > 1980-01-01] %>% 
+  ggplot(aes(pubdate)) +
+  geom_histogram(binwidth = 70)
+
+
+
+
+  
+options(datatable.prettyprint.char=20L)
+
+```
+## reduced 2 - Exporting/reducing the data for downloading pdfs -- second round. 
+
+```{r}
+
+# There are 2364 docs with sixing in the keywords.
+dt_join[search_term %like% "sixing_keywords", .(unique(document_id))]
+
+
+# When combining and counting with dt_reduced_1 it turns out that most of them were caught. Let's get the rest.
+dt_reduced_1 <- fread(r"(C:\Users\m\projects\cnki_database\data\run_5\tbls\tbl_articles_run_5_reduced_1.csv)", encoding = "UTF-8")
+
+reduced2_a <- dt_reduced_1[document_id %in% dt_join[search_term %like% "sixing_keywords", unique(document_id)]]
+
+# Next, just get the top 10,000 most-downloaded papers (that haven't appeared in reduced_1) This comes to 8054. 
+reduced2_b <- dt[order(-downloads)][1:10000]
+
+# Get anything that mentions either sixing, qiangjue, zhushe in the abstract
+reduced2_c <- dt[abstract_ch %like% "死刑|枪决|注射"]
+
+#combine these three and takeout any already captured
+dt_reduced_2 <- rbind(reduced2_a, reduced2_b, reduced2_c)[document_id %notin% dt_reduced_1[,document_id]]
+
+# Make a Run-LEngth ID column vector (rleidv) starting at 1 for V1 and art; then base it at 0 by minusing one.
+dt_reduced_2[, V1 := rleidv(dt_reduced_2)][,V1 := V1-1][, art := rleidv(dt_reduced_2)][,art := art-1]
+
+# Export it. 
+# dt_reduced_2 %>% fwrite(r"(C:\Users\m\projects\cnki_database\data\run_5\tbls\tbl_articles_run_5_reduced_2.csv)")
+
+
+dt_reduced_2 <- fread(r"(C:\Users\m\projects\cnki_database\data\run_5\tbls\tbl_articles_run_5_reduced_2.csv)", encoding = "UTF-8")
+
+dt_reduced_2[duplicated(document_id)]
+
+dt_reduced_2[document_id == "CJFDLAST2017_JNXB201709006"]
+
+options(datatable.prettyprint.char=20L)
+
+Sys.setlocale("LC_CTYPE", locale = "chs")
+
+options(datatable.prettyprint.char=300L)
+dt[abstract_ch %like% "注射", .(journal_year, title_ch, abstract_ch)] %>% print(140)
+
+dt[abstract_ch %like% "器官移植"][,.(journal_year, abstract_ch)]
+
+
+dt[title_ch %like% "与魔鬼同行的人——曾成杰"]
+
+```
+
+
+
+
+
+
+
+

@@ -1,0 +1,296 @@
+---
+title: "Some basic analysis for our death penalty project"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+library(data.table)
+library(tidyverse)
+library(lubridate)
+library(spacyr)
+library(quanteda)
+library(quanteda.corpora)
+library(quanteda.textstats)
+library(quanteda.textmodels)
+library(quanteda.textplots)
+
+`%notlike%` <- Negate(`%like%`)
+
+`%notin%`<- Negate(`%in%`)
+```
+
+# Imports, some basic looking at things, and a simple chart
+
+```{r}
+# grabbing data from the db. 
+join_files <- list.files("/mnt/c/Users/m/projects/cnki_database/tbls/run_5", pattern = "tbl_join", full.names = TRUE)
+
+main_db <- fread("/mnt/c/Users/m/projects/cnki_database/tbls/merged/tbl_final_articles.csv")
+
+setnames(main_db, "document_id", "doc_id")
+
+readdata <- function(x){
+    dt_csv <- fread(x, encoding = "UTF-8", header = TRUE)[,-c("V1")]
+    keycols <- c("document_id")
+    setkeyv(dt_csv, keycols)
+    return(dt_csv)
+}
+
+mylist <- lapply(join_files, readdata)
+dt_join <- rbindlist(mylist, use.names = TRUE, fill = TRUE)
+
+setnames(dt_join, "document_id", "doc_id")
+
+dt <- main_db[dt_join, on = "doc_id"]
+```
+
+# What were the search terms in the db?
+
+This shows them plus the field. Forget the NA value. 
+```{r}
+dt[,unique(search_term)]
+
+# all the column names
+names(dt)
+```
+
+# A simple plot of the pubs
+
+```{r}
+dt[journal_year > 1980] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+```
+
+# An attempted normalisation of this data per pubs that /mention/ criminal justice
+
+Think the idea here is that the broader universe of all pubs mentioning 刑事司法 anywhere in them are going to be a kind of control on whether there's anything funny going on in these data.
+
+Note that these are two different datasets -- though with some overlap. The first is the entire dataset with all the terms about death penalty/criminal justice. Below are ALL articles that even /mentioned/ it anywhere in it. The n is `r nrow(dt_sifa_pubcates).` The n of the first is `r nrow(dt)`.
+
+```{r}
+# read in that data. 
+df_sifa_pubdates <- fread("/mnt/c/Users/m/projects/cnki_database/data/run_10/raw_html_pages/sifa_pubdates.txt")
+# note the above was created from the htmls with the command rg -o [0-9]{4}-[0-9]{2}-[0-9]{2} 0*.html | rg -o [0-9]{4}-[0-9]{2}-[0-9]{2} and that was output to that text file. 
+
+setnames(df_sifa_pubdates, "V1", "pubdate")
+
+df_sifa_pubdates[,pubdate := ymd(pubdate)]
+
+df_sifa_pubdates[pubdate > 1980-01-01] %>% 
+  ggplot(aes(pubdate)) +
+  geom_histogram(binwidth = 70)
+
+```
+
+# Some analysis of funding
+
+This just pulls out all the cases where there is a report of funding, and plots on the year.
+
+```{r}
+dt[,.(funding)][,uniqueN(funding)]
+
+dt[funding != ""] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+```
+
+Now trying the same for death penalty only. First just the publication distribution.... for all time and then just post 1980 then post 2000
+
+```{r}
+dt[search_term %like% "sixing"] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+dt[search_term %like% "sixing"][journal_year > 1980] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+dt[search_term %like% "sixing"][journal_year > 2000] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+```
+Now the funding count per year.
+
+```{r}
+dt[search_term %like% "sixing"][funding != ""] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+
+```
+
+# Who is doing the funding? 
+
+If you just unique ALL of the different funding agencies, the list is massive. We can't figure out who is funding what like that. I'll try get some topn counts.
+
+```{r}
+dt[,unique(funding)]
+
+# this is not very informative. 
+dt[,.(funding_count = .N), by = funding]
+```
+
+looking at a few, some ideas for funding source TYPES might be...
+
+```{r}
+funding_sources <- c("教育部","国家社会科学基金","省|市","中国法学会", "大学|学院|研究所|研究院") 
+
+dt[funding %like% "教育部",funding_source := "MOE"]
+dt[funding %like% "国家社会科|国家社科",funding_source := "CASS"]
+dt[funding %like% "省|市",funding_source := "province_or_city"]
+dt[funding %like% "大学|学院|研究所|研究院",funding_source := "university"]
+dt[funding %like% "中国法学会",funding_source := "China_law_society"]
+dt[funding %like% "国家",funding_source := "central_govt"]
+
+dt[,unique(funding_source)]
+
+dt[,.(funding_count = .N), by = .(funding, funding_source, journal_year)]
+
+dt[,.(funding_count = .N), by = .(funding_source)]
+
+dt[,unique(doc_id, funding)]
+
+dt
+
+dt[,unique()]
+```
+
+These are for death penalty funding specifically. 
+
+```{r}
+dt[search_term %like% "sixing"][funding != ""] %>% 
+  ggplot(aes(journal_year)) +
+  geom_histogram(binwidth = 1)
+
+dt[search_term %like% "sixing"][,.(funding_count = .N), by = .(funding_source, journal_year)
+   ][funding_source != ""][funding_source != "NA"] %>%
+  ggplot(aes(journal_year, funding_count, colour = funding_source)) +
+  geom_line()
+  
+
+```
+not seeing any real pattern in terms of where funding is coming from! And they dip in 2015 so maybe there's some other funder?? Let's quickly check and move right on. 
+
+UPDATE: OK, I didn't yet put in central govt stuff and I didn't have as expansive a definition of CASS. So those were more. 
+
+The actual number of papers that declared funding to begin with were not all that great -- just `r dt[funding != "",uniqueN(doc_id)]` papers of the total `r dt[,uniqueN(doc_id)]` papers in the dataset.  
+
+(and again, this is the dataset with these searches:)
+
+dt[,unique(search_term)]
+
+
+Not sure if there is more juice to squeeze on the funding. 
+
+
+# Analysis of full text of CNKI publications
+
+Our RQ here is whether a bunch of the slogans we're interested in show up in academic publications about DP in China and how much they show up. 
+
+The data we're drawing from is the corpus of full text articles that I downloaded, ~14k of which were able to be converted to fulltext using the pdftotext command line tool, and some number of which had to be converted using tesseract, an open source OCR tool. I'll get the actual numbers later when we need them. They're all in the files. 
+
+Across these fulltext articles, we're going to search for a bunch of terms we're interested in, and basically plot them over time. I am going to write some functions that just push out very simple graphs showing this; and later when it's time for pub or sharing then we can figure out which ones are good and how to combine them etc. 
+
+It took about the last two days to figure out how to do this.... all kinda new. I think there are probably much more efficient ways but whatever.
+
+Here are the terms we're interested in: 宽严相济", "少杀慎杀", "严打", "依法治国", "以审判为中心", "从严从宽", "司法公正", "冤假错案", "和谐社会",  "中国梦", "邓小平", "胡锦涛", "习近平". And in code I'm going to mess with them a bit to get the collocations right.... it's messy because the word boundary algos don't work very well for chinese. Most languages have spaces between words so the computer knows what to call a word. With Chinese either they have to use a dictionary or some kind of NLP guessing game. I didn't want to spend more time digging into which tokenising algorithm is the absolute best or get into tweaking the algo choices and blah. There are ways to make it perfect but for our purposes it's simplest to just mod the target strings and make do with a simple solution. Which is def not ideal but yeah. 
+
+But I will use the jieba tokeniser because it is at least trained on Chinese text data based on a dictionary so it does a better job than the standard one in quanteda, which does the guessing thing with word boundaries. Actually it was quite frustrating to figure this out because I didn't quite grok how it tokenised, and had to look at a bunch of docs. This is the barrier to entry for technical tasks -- all the very annoying unknown unknowns that you can only absorb by painful experience. I think. 
+
+```{r}
+terms_of_interest <- c("宽_严_相_济", "少_杀", "严_打", "依法_治国", "以_审判_", "从_严_从_宽", "司法_公正", "冤_假_错_案", "和谐_社会",  "中国_梦", "邓小平", "胡锦涛", "习近平")
+
+# load the corpus
+
+rm(list = ls())
+
+spacy_initialize()
+spacy_install() 
+
+spacy_initialize()
+
+dt_fulltext_cnki_files <- as_tibble(list.files("./data/txt", full.names = TRUE)) %>% 
+  mutate(doc_id = str_match(value, "(txt\\/)(.*?)(--)")[,3]) %>% 
+  rename(file_path = value)
+  
+dt_joined <- left_join(dt_fulltext_cnki_files, main_db)
+
+dp_academic_corpus <- dt_joined %>% 
+  mutate(fulltext = map_chr(file_path, ~read_file(.x))) 
+
+dp_academic_corpus <- corpus(dp_academic_corpus, text_field = "fulltext")
+
+txt <- "10月初，聯合國軍逆轉戰情，向北開進，越過38度線，終促使中华人民共和国決定出兵介入，中国称此为抗美援朝。"
+lis <- list(mwe1 = "抗美援朝", mwe2 = "向北開進")
+
+## tokenize dictionary values
+lis <- lapply(lis, function(x) stri_c_list(as.list(tokens(x)), sep = " "))
+dict <- dictionary(lis)
+
+## tokenize texts and count
+toks <- tokens(txt)
+dfm(tokens_lookup(toks, dict))
+
+spacyr::spacy_tokenize()
+library(stringi)
+library("spacyr")
+
+# spacy_download_langmodel("zh_core_web_lg") # only needs to be done once
+spacy_initialize(model = "zh_core_web_lg")
+
+txt <- "10月初，聯合國軍逆轉戰情，向北開進，越過38度線，終促使中华人民共和国決定出兵介入，中国称此为抗美援朝。"
+
+## tokenize texts and count
+toks <- tokens(txt)
+dfm <- dfm(tokens_lookup(toks, dict))
+
+dfm %>% as_tibble(test)
+
+spacy_tokenize(txt) %>%
+  as.tokens() %>%
+  tokens_compound(pattern = phrase("抗美 援朝"), concatenator = " ") %>%
+  tokens_select("抗美援朝") %>%
+  dfm() %>%
+  textstat_frequency()
+
+
+txt <- "23:加上刑事司法理念和政策向“少杀慎杀”方向转变的影响，导致 45:节为由作出了死缓的改判。“少杀慎杀”是我们党和国家所提倡 49:的人。司法实践中，法院为了贯彻“少杀慎杀”的刑事政策，往 59:可以从情感纠纷、自首情节等角度，适用“少杀慎杀”原则。但 67:三、“少杀慎杀”不能绕过“罚当其罪” 68:一边是“杀人偿命”的传统观念，另一边是“少杀慎杀”的 74:权，提倡尊重和保障人权的今天，“少杀慎杀”固然是司法的必 91:顾民心与道义，在“少杀慎杀”的道路上转身太快，甚至绕过了 100:[2]申林.《“少杀慎杀”政策不能取代法律》.中华论坛.2011年9月7日. 101:[3]邓海建.《“少杀慎杀”的前提是“当判必判”》.《中国青年报》.（2011557:然而, 对于宽严相济刑事政策同惩办与宽大相结合政策之间的关系以及同 “严打 ”政策之间的关 569:于是, 当宽严相济刑事政策提出后, 紧接着产生的一个 571:如何理解宽严相济的刑事政策同惩办与宽大相结合的政策以及同 “严打 ”政策之间的关系? 572:宽严相济刑事政策的提出, 是否意味着对惩办与宽大相结合政策的取代 ? 是否意味着对“严打 ”政策的 574:对于宽严相济政策同惩办与宽大相结合政策之间的关系, 大体上有三种观点: 577:神的新表述 。另一种观点认为, 宽严相济刑事政策和惩办与宽大相结合政策之间形似而神异, 具体说, 589:论者的这种理解多少有些望文生义之嫌, 在宽严相济 、 592:有待考证的 。第三种是带有折衷色彩的观点, 它倾向于前述第一种观点 。这种观点不否认宽严相济刑 595:些已经过时或者不能完全反映该政策的基本精神, 因而赞同以宽严相济的提法取代惩办与宽大相结合 618:《宽严相济刑事政策的时代含义及实现方式 》, 载 《法学杂志 》2006年第 4期 。 623:总之, 学者们较为一致的看法是, 宽严相济刑事政策的提出, 带有纠 “严打 ”之偏之意。有的 624:学者认为, 宽严相济刑事政策不是对 “严打 ”的取代, 更不是对 “严打 ”的否定, 而应是将 “严打 ”纳入到宽 625:严相济刑事政策的框架中确立其地位, 从这个意义上说, “严打”不是与宽严相济刑事政策相并列的一 626:个刑事政策, 而是包含在宽严相济刑事政策之中的体现宽严相济的严厉性的内容, 只有在这个意义上,"
+
+terms_of_interest <- c("宽严 相济", "少杀 慎杀", "严打", "依法治国", "以审判", "从严从宽", "司法公正", "冤假错案", "和谐社会",  "中国梦", "邓小平", "胡锦涛", "习近平")
+
+
+get_term_freq <- function(term){
+  
+spacy_tokenize(txt) %>%
+  as.tokens() %>% 
+  tokens_compound(pattern = phrase("少杀 慎杀"), concatenator = " ") %>% 
+  tokens_select("少杀 慎杀") %>% 
+  dfm() %>%
+  textstat_frequency()
+
+}
+
+
+
+
+spacy_tokenize(txt) %>%
+  as.tokens() 
+
+
+
+
+```
+
+
+
+
+
+
