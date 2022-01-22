@@ -1,12 +1,17 @@
-
-
 # Project workflow
-The data used for this project was pulled from a large, local database. 
 
-The files are 
+Four sources of data were used for this project. An explanation of each of the data sources, how they were gathered and preprocessed, appears below. 
+
+Several of the original data sources are not publicly available, primarily due to copy right concerns. This is noted in the relevant section. 
 
 
-# About the OCR process
+## People's Daily corpus (only partially available)
+
+
+## CNKI publications (metadata available only)
+
+
+### About the OCR process
 Nearly all the pdfs were converted with pdftotext on the command line using the -raw flag. 
 
 There were 1109 files that could not be converted (measured as any file less than 1kb). Those >1kb files were moved out of the txt folder and into old_text and the files in ocr_text moved in. ocr_text also got zipped to keep it in the exact, pristine state it existed in after the OCR. 
@@ -19,4 +24,20 @@ ocr_clean are files that have whitespace deleted. Those are used for the analysi
 
 Whitespace was deleted with this command: 
 `for f in *.txt; do tr -d " \t\n\r" < "$f" > "/path/to/dest/${f%.txt}"--clean.txt; done`
+
+
+
+
+
+## PRC leader collected works and Xi Jinping speeches (fully available)
+
+
+
+
+
+
+The data used for this project was pulled from a large, local database. 
+
+The files are 
+
 
