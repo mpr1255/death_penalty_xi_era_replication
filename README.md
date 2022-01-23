@@ -1,4 +1,4 @@
-** Replication files for Smith, Tobias, Sue Trevaskes and Matthew Robertson, "(Not) talking about the death penalty in the Xi Jinping era" forthcoming in the International Journal for Crime, Justice and Social Democracy
+**Replication files for Smith, Tobias, Sue Trevaskes and Matthew Robertson, "(Not) talking about the death penalty in the Xi Jinping era" forthcoming in the International Journal for Crime, Justice and Social Democracy**
 =====================================
 
 Four sources of data were used for this project. An explanation of each of the data sources, how they were gathered and preprocessed, appears below. 
