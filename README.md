@@ -2,16 +2,23 @@
 
 =====================================
 
+This repository hosts the replication materials and code for the above paper.
+
 Four sources of data were used for this project. An explanation of each of the data sources, how they were gathered and preprocessed, appears below. 
 
-Several of the original data sources are not publicly available, primarily due to copy right concerns. This is noted in the relevant section. 
-
+Several of the original data sources are not publicly available, primarily due to copyright concerns. This is noted in the relevant section. The graphics used from the metadata from those sources are however in this repo, and they can be reproduced based on the code provided.
 
 ## People's Daily corpus (only partially available)
 
+**About the data source:** This project uses a subset of the full People's Daily dataset administered by Matthew Robertson. A presentation based on this project is here: https://github.com/mpr1255/quickshare/blob/master/polmeth_pres.pdf 
+
+How that dataset was filtered for this paper is visible in `code/peoples_daily_analysis.R`, which also contains the code for the graphs.
+
+The dataset is updated daily, and we use data up until 01/15/2022 for this project (there were no death penalty-related articles in 2022 so effectively the relevant data ends in 2021.)
 
 ## CNKI publications (metadata available only)
 
+**About the data source:** CNKI data was 
 
 ### About the OCR process
 Nearly all the pdfs were converted with pdftotext on the command line using the -raw flag. 
