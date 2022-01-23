@@ -20,6 +20,15 @@ library(tidyr)
 library(furrr)
 library(tictoc)
 library(extrafont)
+font_import(paths = "/Library/Fonts/") # import all your fonts
+font_import(pattern = "Garamond.ttf")
+fonts() #get a list of fonts
+fonttable()
+fonttable()[40:45,] 
+install.packages("extrafontdb")
+library(extrafontdb)
+
+
 # font_install(source_han_serif())
 # font_families()
 here <- rprojroot::find_rstudio_root_file()
@@ -93,11 +102,13 @@ dp_sh_fulltext %>%
   # scale_colour_brewer(palette = "Set1") +
   geom_hline(aes(color = "red", yintercept = mean_count), show.legend = F, size = 1) +
   theme_classic(base_size = 14) +
-  theme(text = element_text(family = "", color = "black")) +
+  theme(text = element_text(family = "mono", color = "black")) +
   scale_y_continuous(labels = scales::comma) +
   xlab("year") +
   ylab("") +
-  labs(title = glue("Absolute number of articles that mention death penalty (with or without reprieve) by year"))
+  labs(title = glue("Absolute number of articles that mention death penalty \n(with or without reprieve) by year"))
+
+ggsave("./out/peoples_daily/absolute_by_year_col.png", device = "png")
 
 #  Number of mentions as % of total articles with average line by year ---------------------------
 dp_sh_fulltext |> 
@@ -110,13 +121,15 @@ dp_sh_fulltext |>
   # scale_colour_brewer(palette = "Set1") +
   geom_hline(aes(color = "red", yintercept = mean_prop), show.legend = F, size = 1) +
   theme_classic(base_size = 14) +
-  theme(text = element_text(family = "", color = "black")) +
+  theme(text = element_text(family = "mono", color = "black")) +
   scale_y_continuous(labels = scales::percent) +
   xlab("year") +
   ylab("") +
-  labs(title = glue("Percent of articles in People's Daily that mention death penalty (with or without reprieve) by year"))
+  labs(title = glue("Percent of articles in People's Daily that mention death penalty \n(with or without reprieve) by year"))
 
-#  Percent of page one articles that mention death penalty per year ---------------------------
+ggsave("./out/peoples_daily/all_by_percent.png", device = "png")
+
+#  Percent of page one articles that mention death penalty \n per year ---------------------------
 
 dp_sh_hed |> 
   count(year) |> 
@@ -128,90 +141,85 @@ dp_sh_hed |>
   scale_colour_brewer(palette = "Set1") +
   # geom_hline(aes(color = "red", yintercept = mean_prop), show.legend = F, size = 1) +
   theme_classic(base_size = 14) +
-  theme(text = element_text(family = "", color = "black")) +
+  theme(text = element_text(family = "mono", color = "black")) +
   scale_y_continuous(labels = scales::percent) +
   xlab("year") +
   ylab("") +
-  labs(title = glue("Percent of front page articles in People's Daily that mention death penalty (with or without reprieve) by year"))
+  labs(title = glue("Percent of front page articles in People's Daily that mention death penalty \n(with or without reprieve) by year"))
 
+ggsave("./out/peoples_daily/front_page_by_percent.png", device = "png")
 
-
-# "Absolute number of articles in People's Daily that mention death penalty by month --------
+# "Absolute number of articles in People's Daily that mention death penalty \n by month --------
 dp_sh_fulltext[month > "2012-01-01"] |> 
   count(month) |> 
   ggplot(aes(x = month, y = n)) +
   geom_line() +
   theme_classic(base_size = 14) +
-  theme(text = element_text(family = "", color = "black")) +
+  theme(text = element_text(family = "mono", color = "black")) +
   scale_y_continuous(labels = scales::comma) +
   scale_colour_brewer(palette = "Dark2") +
   xlab("year") +
   ylab("") +
-  labs(title = glue("Absolute number of articles in People's Daily that mention death penalty (with or without reprieve) by month"))
+  labs(title = glue("Absolute number of articles in People's Daily that mention death penalty \n(with or without reprieve) by month"))
 
-
+ggsave("./out/peoples_daily/absolute_by_month.png", device = "png")
 
 # TOPIC MODELS! -----------------------------------------------------------
 
 # Tokenize ----------------------------------------------------------------
 
-cutter = worker()
+pd_dfm <- read_rds("./out/peoples_daily/pd_dfm.Rds")
 
-GetTokens <- function(fulltext){
-  a <- segment(fulltext, cutter)
-  return(paste(a, collapse = " "))
+if(!exists("pd_dfm")){
+  cutter = worker()
+
+  GetTokens <- function(fulltext){
+    a <- segment(fulltext, cutter)
+    return(paste(a, collapse = " "))
+  }
+  dp_sh_fulltext[,fulltext := str_remove_all(fulltext, "\\n|\\r|\\t|\\s+")]
+  tic()
+  dp_sh_fulltext[, ft_toks := map_chr(fulltext, ~GetTokens(.x))]
+  toc()
+  
+  corp <- corpus(dp_sh_fulltext[,-c("fulltext")], docid_field = "docid", text_field = "ft_toks")
+  
+  toks <- tokens(corp, remove_punct = TRUE, remove_numbers = TRUE, padding = F, what = "fasterword") |> 
+    tokens_remove(pattern = stopwords("zh_cn", source = "marimo"), padding = F)
+  
+  pd_dfm <- dfm(toks) %>% 
+    dfm_trim(min_termfreq = 0.8, termfreq_type = "quantile",
+             max_docfreq = 0.1, docfreq_type = "prop")
+
+  pd_dfm |> write_rds("./out/peoples_daily/pd_dfm.Rds")
 }
-dp_sh_fulltext[,fulltext := str_remove_all(fulltext, "\\n|\\r|\\t|\\s+")]
-tic()
-dp_sh_fulltext[, ft_toks := map_chr(fulltext, ~GetTokens(.x))]
-toc()
 
-corp <- corpus(dp_sh_fulltext[,-c("fulltext")], docid_field = "docid", text_field = "ft_toks")
+# Making four topic models 
+# 1. Mao era until 1978 (first yr of reforms)
+# 2. 01/1978 to 01/2003 (reform era)
+# 3. 01/2003-01/2013 (hu wen era)
+# 4. 01/2013-01/2022 ( xi era)
 
-toks <- tokens(corp, remove_punct = TRUE, remove_numbers = TRUE, padding = F, what = "fasterword") |> 
-  tokens_remove(pattern = stopwords("zh_cn", source = "marimo"), padding = F)
+dfm_mao_era <- dfm_subset(pd_dfm, date < "1978-01-01") 
+dfm_reform_era <- dfm_subset(pd_dfm, date > "1978-01-01" & date < "2003-01-01")
+dfm_hu_wen_era <- dfm_subset(pd_dfm, date > "2003-01-01" & date < "2013-01-01")
+dfm_xi_era <- dfm_subset(pd_dfm, date > "2013-01-01" & date < "2022-01-01")
 
+lda1 <- read_rds("./out/peoples_daily/lda1.Rds")
+lda2 <- read_rds("./out/peoples_daily/lda2.Rds")
+lda3 <- read_rds("./out/peoples_daily/lda3.Rds")
+lda4 <- read_rds("./out/peoples_daily/lda4.Rds")
 
-pd_dfm <- dfm(toks) %>% 
-  dfm_trim(min_termfreq = 0.8, termfreq_type = "quantile",
-           max_docfreq = 0.1, docfreq_type = "prop")
+# lda1 <- textmodel_lda(dfm_mao_era, k = 4)
+# lda2 <- textmodel_lda(dfm_reform_era, k = 4)
+# lda3 <- textmodel_lda(dfm_hu_wen_era, k = 4)
+# lda4 <- textmodel_lda(dfm_xi_era, k = 4)
+# lda1 |> write_rds("./out/peoples_daily/lda1.Rds")
+# lda2 |> write_rds("./out/peoples_daily/lda2.Rds")
+# lda3 |> write_rds("./out/peoples_daily/lda3.Rds")
+# lda4 |> write_rds("./out/peoples_daily/lda4.Rds")
 
-tmod_lda <- textmodel_lda(pd_dfm, k = 5)
-
-terms(tmod_lda, 30)
-
-head(topics(tmod_lda), 20)
-
-
-# assign topic as a new document-level variable
-dfmat_news$topic <- topics(tmod_lda)
-
-# cross-table of the topic frequency
-table(dfmat_news$topic)
-
-
-
-
-
-View(pd_dfm)
-
-
-
-
-
-
-
-
-
-corp_immig <- corpus(data_char_ukimmig2010, 
-                     docvars = data.frame(party = names(data_char_ukimmig2010)))
-print(corp_immig)
-str(corp_immig)
-View(data_char_ukimmig2010)
-str(data_char_ukimmig2010)
-
-
-testout[docid == "201303_2243"]$ft_toks
-
-
-
+terms(lda1, 20) |> as.data.table() |> fwrite("./out/peoples_daily/topic_model_20_terms_mao_era.csv")
+terms(lda2, 20) |> as.data.table() |> fwrite("./out/peoples_daily/topic_model_20_terms_reform_era.csv")
+terms(lda3, 20) |> as.data.table() |> fwrite("./out/peoples_daily/topic_model_20_terms_hu_wen_era.csv")
+terms(lda4, 20) |> as.data.table() |> fwrite("./out/peoples_daily/topic_model_20_terms_xi_era.csv")
