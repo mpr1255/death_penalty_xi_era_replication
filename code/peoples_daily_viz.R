@@ -163,9 +163,6 @@ dp_sh_fulltext[year >= "2013-01-01"] %>%
 
 ggsave("./out/peoples_daily/absolute_by_year_col_xi_era.png", device = "png")
 
-
-
-
 #  Number of mentions as % of total articles with average line by year ---------------------------
 dp_sh_fulltext |> 
   count(year) |> 
