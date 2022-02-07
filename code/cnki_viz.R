@@ -9,7 +9,7 @@ library(lubridate)
 library(jsonlite)
 
 
-df <- as.data.table(fromJSON("./out/cnki/summary_statistics_tables/sixing_sihuan_guanjianci_counts.json"))[,.(year = name, n = y)]
+df <- as.data.table(fromJSON("./out/cnki/sixing_sihuan_guanjianci_counts.json"))[,.(year = name, n = y)]
 
 df[,year := paste0(year, "-01-01")]
 df[,year := ymd(year)]
@@ -34,7 +34,7 @@ ggsave("./out/cnki/absolute_sixing_sihuan_by_year_col.png", device = "png")
 
 
 
-df2 <- as.data.table(fromJSON("./out/cnki/summary_statistics_tables/xingshi_sifa_guanjianci_counts.json"))[,.(year = name, n = y)]
+df2 <- as.data.table(fromJSON("./out/cnki/xingshi_sifa_guanjianci_counts.json"))[,.(year = name, n = y)]
 
 df2[,year := paste0(year, "-01-01")]
 df2[,year := ymd(year)]
