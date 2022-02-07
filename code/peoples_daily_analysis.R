@@ -24,8 +24,7 @@ font_import(paths = "/Library/Fonts/") # import all your fonts
 font_import(pattern = "Garamond.ttf")
 fonts() #get a list of fonts
 fonttable()
-fonttable()[40:45,] 
-install.packages("extrafontdb")
+# fonttable()[40:45,] 
 library(extrafontdb)
 
 
@@ -45,7 +44,7 @@ options(datatable.prettyprint.char=20L)
 # dt <- as.data.table(dbReadTable(con, "peoples_daily"))
 # dt1 <- dt[headline %like% "死刑|死缓" | fulltext %like% "死刑|死缓"]
 # dt1[,fulltext := str_remove_all(fulltext, "\\n|\\r|\\t|\\s+")]
-# dt1 |> fwrite("./data/peoples_daily/peoples_daily_sixing_sihuan_ft_title.csv")
+# dt1 |> fwrite("./data/peoples_daily/peoples_daily/peoples_daily_sixing_sihuan_ft_title.csv")
 # dt1 <- dt
 # dt1[,date := ymd(date)]
 # dt1[,month := floor_date(date, "month")]
@@ -61,14 +60,14 @@ options(datatable.prettyprint.char=20L)
 # total_pubs_month <- dt1[,n := .N, by = "month"][!is.na(month),.(month, n)] |> distinct(month, .keep_all = T)
 # total_pubs_year <- dt1[,n := .N, by = "year"][!is.na(year),.(year, n)] |> distinct(year, .keep_all = T)
 # 
-# ft_nchar_month |> fwrite("./data/peoples_daily_ft_nchar_month.csv")
-# ft_nchar_year |> fwrite("./data/peoples_daily_ft_nchar_year.csv")
-# ft_nchar_decade |> fwrite("./data/peoples_daily_ft_nchar_decade.csv")
-# page_one_headlines_month |> fwrite("./data/peoples_daily_page_one_headlines_month.csv")
-# page_one_headlines_year |> fwrite("./data/peoples_daily_page_one_headlines_year.csv")
-# page_one_headlines_decade |> fwrite("./data/peoples_daily_page_one_headlines_decade.csv")
-# total_pubs_month |> fwrite("./data/peoples_daily_total_pubs_month.csv")
-# total_pubs_year |> fwrite("./data/peoples_daily_total_pubs_year.csv")
+# ft_nchar_month |> fwrite("./data/peoples_daily/peoples_daily_ft_nchar_month.csv")
+# ft_nchar_year |> fwrite("./data/peoples_daily/peoples_daily_ft_nchar_year.csv")
+# ft_nchar_decade |> fwrite("./data/peoples_daily/peoples_daily_ft_nchar_decade.csv")
+# page_one_headlines_month |> fwrite("./data/peoples_daily/peoples_daily_page_one_headlines_month.csv")
+# page_one_headlines_year |> fwrite("./data/peoples_daily/peoples_daily_page_one_headlines_year.csv")
+# page_one_headlines_decade |> fwrite("./data/peoples_daily/peoples_daily_page_one_headlines_decade.csv")
+# total_pubs_month |> fwrite("./data/peoples_daily/peoples_daily_total_pubs_month.csv")
+# total_pubs_year |> fwrite("./data/peoples_daily/peoples_daily_total_pubs_year.csv")
   
 # DONE --------------------------------------------------------------------
 
@@ -80,35 +79,92 @@ dt1[,day := floor_date(date, "day")]
 dt1[,year := floor_date(date, "year")]
 dt1[,decade := as.numeric(year(year)) %/% 10 * 10]
 
-ft_nchar_month  <-  fread("./data/peoples_daily_ft_nchar_month.csv")
-ft_nchar_year  <-  fread("./data/peoples_daily_ft_nchar_year.csv")
-ft_nchar_decade  <-  fread("./data/peoples_daily_ft_nchar_decade.csv")
-page_one_headlines_month  <-  fread("./data/peoples_daily_page_one_headlines_month.csv")
-page_one_headlines_year  <-  fread("./data/peoples_daily_page_one_headlines_year.csv")[,total_n := n_headline][,-c("n_headline")][,year := floor_date(year, "year")]
-page_one_headlines_decade  <-  fread("./data/peoples_daily_page_one_headlines_decade.csv")
-total_pubs_month <- fread("./data/peoples_daily_total_pubs_month.csv")[,total_n := n][,-c("n")][,month := floor_date(month, "month")]
-total_pubs_year  <- fread("./data/peoples_daily_total_pubs_year.csv")[,total_n := n][,-c("n")][,year := floor_date(year, "year")]
+
+# Mean
+dt1 |> 
+  count(year) |> 
+  drop_na() |> 
+  summarise(mean = mean(n))
+
+# SD
+dt1 |> 
+  count(year) |> 
+  drop_na() |> 
+  summarise(sd = sd(n))
+
+# variance
+dt1 |> 
+  count(year) |> 
+  drop_na() |> 
+  summarise(var = var(n))
+
+
+dt1 |> 
+  count(year) |> 
+  drop_na() |> 
+  ggplot() +
+  geom_histogram(aes(n), bins = 35) +
+  theme_classic()
+
+
+ft_nchar_month  <-  fread("./data/peoples_daily/peoples_daily_ft_nchar_month.csv")
+ft_nchar_year  <-  fread("./data/peoples_daily/peoples_daily_ft_nchar_year.csv")
+ft_nchar_decade  <-  fread("./data/peoples_daily/peoples_daily_ft_nchar_decade.csv")
+page_one_headlines_month  <-  fread("./data/peoples_daily/peoples_daily_page_one_headlines_month.csv")
+page_one_headlines_year  <-  fread("./data/peoples_daily/peoples_daily_page_one_headlines_year.csv")[,total_n := n_headline][,-c("n_headline")][,year := floor_date(year, "year")]
+page_one_headlines_decade  <-  fread("./data/peoples_daily/peoples_daily_page_one_headlines_decade.csv")
+total_pubs_month <- fread("./data/peoples_daily/peoples_daily_total_pubs_month.csv")[,total_n := n][,-c("n")][,month := floor_date(month, "month")]
+total_pubs_year  <- fread("./data/peoples_daily/peoples_daily_total_pubs_year.csv")[,total_n := n][,-c("n")][,year := floor_date(year, "year")]
 
 
 dp_sh_hed <- dt1[!is.na(year) & headline %like% "死刑|死缓"]
 dp_sh_fulltext <- dt1[!is.na(year) & fulltext %like% "死刑|死缓"]
 
 # Absolute number of mentions with average line by year ---------------------------
+
 dp_sh_fulltext %>%
   count(year) |> 
   mutate(mean_count = mean(n)) |> 
   ggplot(aes(x = year, y = n)) +
-  geom_col() +
+  geom_col(colour = "black", fill = "white") +
   # scale_colour_brewer(palette = "Set1") +
   geom_hline(aes(color = "red", yintercept = mean_count), show.legend = F, size = 1) +
   theme_classic(base_size = 14) +
   theme(text = element_text(family = "mono", color = "black")) +
-  scale_y_continuous(labels = scales::comma) +
+  scale_y_continuous(labels = scales::comma, expand = c(0,0)) +
+  scale_x_date(breaks = function(x) seq.Date(from = as.Date("1945-01-01"), 
+                                             to = as.Date("2020-01-01"), 
+                                             by = "5 years"), date_labels = "%y", 
+               expand = c(0,0)) +
   xlab("year") +
   ylab("") +
-  labs(title = glue("Absolute number of articles that mention death penalty \n(with or without reprieve) by year"))
+  labs(title = glue("Absolute number of articles in People's Daily that mention death penalty \n(with or without reprieve) by year"))
 
 ggsave("./out/peoples_daily/absolute_by_year_col.png", device = "png")
+
+
+dp_sh_fulltext[year >= "2013-01-01"] %>%
+  count(year) |> 
+  mutate(mean_count = mean(n)) |> 
+  ggplot(aes(x = year, y = n)) +
+  geom_col(colour = "black", fill = "white") +
+  # scale_colour_brewer(palette = "Set1") +
+  geom_hline(aes(color = "red", yintercept = 73.8), show.legend = F, size = 1) +
+  theme_classic(base_size = 14) +
+  theme(text = element_text(family = "mono", color = "black")) +
+  scale_y_continuous(labels = scales::comma, expand = c(0,0)) +
+  scale_x_date(breaks = function(x) seq.Date(from = as.Date("2012-01-01"), 
+                                             to = as.Date("2021-01-01"), 
+                                             by = "1 years"), date_labels = "%y", 
+               expand = c(0,0)) +
+  xlab("year") +
+  ylab("") +
+  labs(title = glue("Absolute number of articles in People's Daily in Xi era \nthat mention death penalty (with or without reprieve) by year"))
+
+ggsave("./out/peoples_daily/absolute_by_year_col_xi_era.png", device = "png")
+
+
+
 
 #  Number of mentions as % of total articles with average line by year ---------------------------
 dp_sh_fulltext |> 
@@ -163,6 +219,18 @@ dp_sh_fulltext[month > "2012-01-01"] |>
   labs(title = glue("Absolute number of articles in People's Daily that mention death penalty \n(with or without reprieve) by month"))
 
 ggsave("./out/peoples_daily/absolute_by_month.png", device = "png")
+
+
+######## STOP HERE FOR DESCRIPTIVES ##########
+
+
+
+
+
+
+
+
+
 
 # TOPIC MODELS! -----------------------------------------------------------
 
