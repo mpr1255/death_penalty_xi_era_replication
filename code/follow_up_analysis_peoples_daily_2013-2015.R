@@ -1,3 +1,5 @@
+# Exploratory code for an analysis of what is going on in the People's Daily death penalty-related reports between 2013 and 2015 (inclusive.)
+
 library(glue)
 library(data.table)
 library(RSQLite)
@@ -193,9 +195,7 @@ dt[year >= "2013-01-01" & year <= "2015-01-01" & fulltext %notlike% "修正|腐�
 dt[year >= "2013-01-01" & year <= "2015-01-01" & fulltext %like% "修正|腐败|反腐|冤假错案|无期徒刑|刑事诉讼法"]
 
 
-
-
-
+# Just looking at  distribution of front pages
 dt %>% count(page_num, year) %>% filter(page_num == 1) %>% 
   ggplot(aes(x = year, y = n)) +
   geom_col()
