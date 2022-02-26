@@ -16,7 +16,7 @@ library(knitr)
 library(kableExtra)
 here <- rprojroot::find_rstudio_root_file()
 
-data <- as.data.table(readxl::read_xlsx(glue("{here}/data/cnki/sixing_sihuan_cites_downloads_pianming_guanjianci_zhaiyao.xlsx")))
+data <- as.data.table(readxl::read_xlsx(glue("{here}/out/cnki/sixing_sihuan_cites_downloads_pianming_guanjianci_zhaiyao.xlsx")))
 
 tbl_a <- data[category == "Most downloaded Xi era", .(title_en, author_en, journal_en, pubdate, cites, downloads)][1:10]
 tbl_b <- data[category == "Most cited Xi era", .(title_en, author_en, journal_en, pubdate, cites, downloads)][1:10]

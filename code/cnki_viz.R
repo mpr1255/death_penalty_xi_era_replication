@@ -54,6 +54,6 @@ df2[year > "1990-01-01" & year < "2022-01-01"] %>%
   ylab("") +
   labs(title = glue("Absolute number of papers in CNKI about criminal justice"))
 
-ggsave("./out/cnki/absolute_sixing_sihuan_by_year_col.png", device = "png")
+ggsave("./out/cnki/absolute_xingshi_sifa_by_year_col.png", device = "png")
 
 
