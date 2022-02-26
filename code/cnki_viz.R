@@ -19,7 +19,7 @@ df[year > "1990-01-01"] %>%
   ggplot(aes(x = year, y = n)) +
   geom_col(colour = "black", fill = "white") +
   # scale_colour_brewer(palette = "Set1") +
-  theme_classic(base_size = 14) +
+  theme_classic(base_size = 16) +
   theme(text = element_text(family = "mono", color = "black")) +
   scale_y_continuous(labels = scales::comma, expand = c(0,0)) +
   scale_x_date(breaks = function(x) seq.Date(from = as.Date("1945-01-01"), 
@@ -28,7 +28,7 @@ df[year > "1990-01-01"] %>%
                expand = c(0,0)) +
   xlab("year") +
   ylab("") +
-  labs(title = glue("Absolute number of papers in CNKI about death penalty \n(with or without reprieve)"))
+  labs(title = glue("Absolute number of papers in CNKI about death penalty (n=1752)\n(with or without reprieve) 1990-2022"))
 
 ggsave("./out/cnki/absolute_sixing_sihuan_by_year_col.png", device = "png")
 
@@ -43,7 +43,7 @@ df2[year > "1990-01-01" & year < "2022-01-01"] %>%
   ggplot(aes(x = year, y = n)) +
   geom_col(colour = "black", fill = "white") +
   # scale_colour_brewer(palette = "Set1") +
-  theme_classic(base_size = 14) +
+  theme_classic(base_size = 16) +
   theme(text = element_text(family = "mono", color = "black")) +
   scale_y_continuous(labels = scales::comma, expand = c(0,0)) +
   scale_x_date(breaks = function(x) seq.Date(from = as.Date("1945-01-01"), 
@@ -52,7 +52,7 @@ df2[year > "1990-01-01" & year < "2022-01-01"] %>%
                expand = c(0,0)) +
   xlab("year") +
   ylab("") +
-  labs(title = glue("Absolute number of papers in CNKI about criminal justice"))
+  labs(title = glue("Absolute number of papers in CNKI about criminal justice (n=4137)\n 1990-2022"))
 
 ggsave("./out/cnki/absolute_xingshi_sifa_by_year_col.png", device = "png")
 
