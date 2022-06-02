@@ -288,3 +288,38 @@ terms(lda1, 20) |> as.data.table() |> fwrite("./out/peoples_daily/topic_model_20
 terms(lda2, 20) |> as.data.table() |> fwrite("./out/peoples_daily/topic_model_20_terms_reform_era.csv")
 terms(lda3, 20) |> as.data.table() |> fwrite("./out/peoples_daily/topic_model_20_terms_hu_wen_era.csv")
 terms(lda4, 20) |> as.data.table() |> fwrite("./out/peoples_daily/topic_model_20_terms_xi_era.csv")
+
+
+
+# BONUS: wuqituxing in full text
+# Note this is pulling from the full sqlite db so it's not exactly reproducible.. But at least you can see what was done. Very simple query.
+
+sqlcmd <- glue("select docid, date, fulltext from peoples_daily")
+con <- dbConnect(RSQLite::SQLite(), paste0(here,"/data/peoples_daily.sqlite"), synchronous = "normal")
+res <- as.data.table(dbGetQuery(con, sqlcmd))
+dbDisconnect(con)
+
+lwop <- res[fulltext %like% "无期徒刑"]
+
+lwop[,.(docid, date = lubridate::ymd(date), year = lubridate::floor_date(date, "year"))] %>% 
+  .[,.N, by = "year"] %>% 
+  mutate(mean_count = mean(n)) %>% 
+  .[order(year)] %>% 
+  ggplot(aes(year, N)) +
+  geom_col() + 
+  geom_col(colour = "black", fill = "white") +
+  # scale_colour_brewer(palette = "Set1") +
+  geom_hline(aes(color = "red", yintercept = mean_count), show.legend = F, size = 1) +
+  theme_classic(base_size = 14) +
+  theme(text = element_text(family = "mono", color = "black")) +
+  scale_y_continuous(labels = scales::comma, expand = c(0,0)) +
+  scale_x_date(breaks = function(x) seq.Date(from = as.Date("1945-01-01"), 
+                                             to = as.Date("2020-01-01"), 
+                                             by = "5 years"), date_labels = "%y", 
+               expand = c(0,0)) +
+  xlab("year") +
+  ylab("") +
+  labs(title = glue("People's Daily articles that include 无期徒刑 in body"))
+
+
+ggsave("./out/peoples_daily/lwop.png", device = "png")
