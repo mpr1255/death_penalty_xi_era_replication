@@ -23,6 +23,22 @@ tbl_b <- data[category == "Most cited Xi era", .(title_en, author_en, journal_en
 tbl_c <- data[category == "Most downloaded Hu era", .(title_en, author_en, journal_en, pubdate, cites, downloads)][1:10]
 tbl_d <- data[category == "Most cited Hu era", .(title_en, author_en, journal_en, pubdate, cites, downloads)][1:10]
 
+
+## MAKE REFERENCES FROM THE CNKI CITATIONSS. JULY 26, 2022.
+# Get the raw citations from the most cited Xi era table
+xi_era <- data[category == "Most cited Xi era"][1:10]
+xi_era$title
+cnki_all <- fread("/Volumes/t7/projects/cnki_database/tbls/merged/tbl_final_articles.csv")
+matched <- cnki_all[xi_era, on = c("title_ch" = "title")][document_id %notlike% "CJFD2014_JCSJ2014150"]
+# matched %>% fwrite(glue("{here}/out/cnki/table_1_original.csv"))
+
+# Markdown-formatted recently. 
+glue("{matched$author_en} ({matched$journal_year}). {matched$i.title_en} [{matched$title_ch}]. *{matched$journal_en}* {matched$journal_issue}.  <br><br>")
+
+# These are then pasted into https://markdowntohtml.com/ and then integrated into the reference list. 
+
+####################
+
 ```
 
 

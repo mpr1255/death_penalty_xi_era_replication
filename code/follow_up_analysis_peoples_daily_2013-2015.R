@@ -24,6 +24,16 @@ options(datatable.prettyprint.char=20L)
 
 dt <- fread("./data/peoples_daily/peoples_daily_sixing_sihuan_ft_title.csv")
 
+
+# For fixing up the refs in the paper  ------------------------------------
+dt[headline %like% "埃及判处塞得港骚乱案11名被告死刑"]
+dt[date %like% "2016.01"]
+
+dt[headline %like% "严"][date %like% "2012|2013|2014|2015|2016|2017"][headline %like% "准"]
+
+dt[headline %like% "严"][fulltext %like% "抢"][headline == "宽严相济不是花钱买命赔钱减刑"]$fulltext
+
+
 dt[,date := ymd(date)]
 dt[,month := floor_date(date, "month")]
 dt[,day := floor_date(date, "day")]
@@ -199,3 +209,4 @@ dt[year >= "2013-01-01" & year <= "2015-01-01" & fulltext %like% "修正|腐败|
 dt %>% count(page_num, year) %>% filter(page_num == 1) %>% 
   ggplot(aes(x = year, y = n)) +
   geom_col()
+
