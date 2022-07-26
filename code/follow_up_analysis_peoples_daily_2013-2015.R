@@ -24,7 +24,6 @@ options(datatable.prettyprint.char=20L)
 
 dt <- fread("./data/peoples_daily/peoples_daily_sixing_sihuan_ft_title.csv")
 
-
 # For fixing up the refs in the paper  ------------------------------------
 dt[headline %like% "埃及判处塞得港骚乱案11名被告死刑"]
 dt[date %like% "2016.01"]
