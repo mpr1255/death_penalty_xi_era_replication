@@ -4,7 +4,7 @@
 
 This repository hosts the replication materials and code for the above paper.
 
-Four sources of data were used for this project. An explanation of each of the data sources, how they were gathered and preprocessed, appears below. 
+Three sources of data were used for this project. An explanation of each of the data sources, how they were gathered and preprocessed, appears below. 
 
 Several of the original data sources are not publicly available, primarily due to copyright concerns. This is noted in the relevant section. The graphics used from the metadata from those sources, however, are in this repo, and they can be reproduced based on the code provided. 
 
