@@ -6,7 +6,9 @@ This repository hosts the replication materials and code for the above paper.
 
 Four sources of data were used for this project. An explanation of each of the data sources, how they were gathered and preprocessed, appears below. 
 
-Several of the original data sources are not publicly available, primarily due to copyright concerns. This is noted in the relevant section. The graphics used from the metadata from those sources are however in this repo, and they can be reproduced based on the code provided.
+Several of the original data sources are not publicly available, primarily due to copyright concerns. This is noted in the relevant section. The graphics used from the metadata from those sources, however, are in this repo, and they can be reproduced based on the code provided. 
+
+Direct any questions about the data to m dot p dot robertson at anu dot edu dot au. It is hoped, however, that any interested party can simply clone or browse this repo and have a thorough understanding of the data used in the paper, how it was processed, and be able to reproduce the analysis.
 
 ## People's Daily corpus (only partially available)
 
@@ -18,35 +20,8 @@ The dataset is updated daily, and we use data up until 01/15/2022 for this proje
 
 ## CNKI publications (metadata available only)
 
-**About the data source:** CNKI data was 
-
-### About the OCR process
-Nearly all the pdfs were converted with pdftotext on the command line using the -raw flag. 
-
-There were 1109 files that could not be converted (measured as any file less than 1kb). Those >1kb files were moved out of the txt folder and into old_text and the files in ocr_text moved in. ocr_text also got zipped to keep it in the exact, pristine state it existed in after the OCR. 
-
-OCR was done with tesseract 4.0 through R, first in R studio then Rscript (hence the absolute paths). The scripts for that are `dp_ocr.R` (and `dp_ocr-reverse.R`; I'll figure out a way to do it in the same file next time...)
-
-All of those text files are in ocr_raw. 
-
-ocr_clean are files that have whitespace deleted. Those are used for the analysis.
-
-Whitespace was deleted with this command: 
-`for f in *.txt; do tr -d " \t\n\r" < "$f" > "/path/to/dest/${f%.txt}"--clean.txt; done`
-
-
-
-
+**About the data source:** CNKI data was obtained using the website's own summary functions. These are visible by conducting a search, then going to `Export and analysis > Visual analysis > Analysis of all search results`. The URL is then of the form `https://oversea.cnki.net/kns/Visual/Center`. We obtained the numbers from the graphs from the underlying JSON there.
 
 ## PRC leader collected works and Xi Jinping speeches (fully available)
 
-
-
-
-
-
-The data used for this project was pulled from a large, local database. 
-
-The files are 
-
-
+**About the data source:** These materials did not come from a single repository like the other two sources. They were obtained by searches using Google and Baidu, Library Genesis, and official websites. Xi's speeches were scraped with `R` and cURL. 
